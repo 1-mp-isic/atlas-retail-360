@@ -1,0 +1,43 @@
+name: atlas_retail
+version: '1.0.0'
+config-version: 2
+
+profile: atlas_retail
+
+model-paths: ['models']
+macro-paths: ['macros']
+seed-paths: ['seeds']
+snapshot-paths: ['snapshots']
+test-paths: ['tests']
+analysis-paths: ['analyses']
+target-path: 'target'
+clean-targets: ['target', 'dbt_packages']
+
+vars:
+  # Fenêtre maximale de recul pour trouver un taux de change (section 07).
+  fx_lookback_days: 7
+  # Identifiant de la version certifiée en cours de construction.
+  publication_id: 'dev'
+
+models:
+  atlas_retail:
+    staging:
+      +materialized: view
+      +schema: silver
+      +tags: ['silver']
+    intermediate:
+      +materialized: ephemeral
+      +tags: ['silver']
+    marts:
+      +materialized: table
+      +schema: gold
+      +tags: ['gold']
+
+seeds:
+  atlas_retail:
+    +schema: silver
+    +quote_columns: false
+
+snapshots:
+  atlas_retail:
+    +target_schema: silver

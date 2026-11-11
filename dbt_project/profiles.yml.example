@@ -1,0 +1,27 @@
+# Copiez ce fichier vers ~/.dbt/profiles.yml et renseignez vos valeurs.
+# Ne committez JAMAIS le fichier rempli : le token est un secret.
+#
+# host et http_path se lisent dans Databricks :
+#   SQL Warehouses > votre warehouse > Connection details
+# Le token se crée dans : Settings > Developer > Access tokens
+
+atlas_retail:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: workspace
+      schema: "{{ env_var('DBT_SCHEMA', 'atlas_dev') }}"
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      token: "{{ env_var('DATABRICKS_TOKEN') }}"
+      threads: 2
+
+    recette:
+      type: databricks
+      catalog: workspace
+      schema: atlas_recette
+      host: "{{ env_var('DATABRICKS_HOST') }}"
+      http_path: "{{ env_var('DATABRICKS_HTTP_PATH') }}"
+      token: "{{ env_var('DATABRICKS_TOKEN') }}"
+      threads: 2

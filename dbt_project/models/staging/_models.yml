@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: >
+      Grain : une commande, état courant. La version retenue est celle de
+      source_version la plus élevée. Les tombstones restent visibles via
+      est_supprime, pour que l'exclusion soit un choix explicite en aval.
+    columns:
+      - name: order_id
+        description: Clé naturelle de la commande.
+        tests: [not_null, unique]
+      - name: currency
+        description: Devise de la commande, utilisée pour la conversion EUR.
+        tests: [not_null]
+      - name: order_discount
+        description: Remise totale additionnelle, répartie au prorata en aval.
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: est_supprime
+        description: Vrai si la dernière version reçue est une suppression CDC.
+        tests: [not_null]
+
+  - name: stg_order_lines
+    description: >
+      Grain : une ligne de commande, état courant. base_ht vaut
+      qty_invoiced x unit_price_ht moins line_discount_ht, et zéro dès qu'une
+      des conditions d'éligibilité de la section 07 manque.
+    columns:
+      - name: line_id
+        description: Identifiant de ligne, comparé lexicographiquement.
+        tests: [not_null]
+      - name: base_ht
+        description: Base HT avant répartition de la remise de commande.
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+      - name: est_eligible_vente
+        description: Vrai si la ligne crée du revenu.
+        tests: [not_null]
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [order_id, line_id]

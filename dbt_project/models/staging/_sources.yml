@@ -1,0 +1,108 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: >
+      Couche Bronze : sources chargées telles quelles par les scripts d'ingestion,
+      avec leurs métadonnées. Aucune correction n'est appliquée ici.
+    schema: atlas_bronze
+    tables:
+      - name: orders
+        description: Une version d'une commande. Clé métier order_id + source_version.
+        columns:
+          - name: order_id
+            description: Identifiant source de la commande, chaîne.
+            tests: [not_null]
+          - name: source_version
+            description: Entier croissant par clé. Ordre d'autorité du CDC.
+            tests: [not_null]
+          - name: currency
+            description: Devise de la commande.
+            tests:
+              - accepted_values:
+                  values: ['EUR', 'CHF', 'TND']
+                  config:
+                    severity: warn
+                    error_if: ">50"
+          - name: order_discount
+            description: Remise totale additionnelle de la commande, devise de commande.
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns: [order_id, source_version]
+
+      - name: order_lines
+        description: Une version d'une ligne. Clé order_id + line_id + source_version.
+        columns:
+          - name: order_id
+            tests: [not_null]
+          - name: line_id
+            tests: [not_null]
+          - name: qty_invoiced
+            description: Peut être inférieure à qty_ordered. Zéro = pas de revenu.
+          - name: unit_price_ht
+            description: Prix unitaire HT dans la devise de commande.
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns: [order_id, line_id, source_version]
+
+      - name: returns
+        description: Un événement de retour. Seul le statut ACCEPTED crée un effet.
+        columns:
+          - name: return_id
+            tests: [not_null]
+          - name: refund_ht
+            description: Montant positif, devise de commande, fait foi sur la valeur remboursée.
+
+      - name: crm_customers
+        description: État courant complet du CRM. Source du snapshot.
+        columns:
+          - name: customer_id
+            tests: [not_null, unique]
+
+      - name: customer_segment_events
+        description: Événements de validité métier du segment client.
+        columns:
+          - name: event_id
+            tests: [not_null, unique]
+
+      - name: product_versions
+        description: Versions métier produit, intervalles [effective_from, effective_to[.
+        columns:
+          - name: product_id
+            tests: [not_null]
+          - name: unit_cost
+            tests: [not_null]
+
+      - name: stores
+        description: Référentiel des 12 magasins, dont le centre e-commerce.
+        columns:
+          - name: store_id
+            tests: [not_null, unique]
+          - name: timezone
+            description: Fuseau utilisé pour interpréter les dates locales.
+            tests: [not_null]
+
+      - name: fx_rates
+        description: >
+          Taux par devise et date de validité. L'absence d'un taux EUR est normale :
+          EUR vaut 1.
+        columns:
+          - name: currency
+            tests: [not_null]
+          - name: rate_date
+            tests: [not_null]
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns: [currency, rate_date]
+
+      - name: opening_stock
+        description: Stock d'ouverture produit x magasin au 31/08/2024.
+
+      - name: stock_movements
+        description: Mouvements de stock signés.
+
+      - name: budgets
+        description: Budget au grain mois x pays x canal x famille x version.
+
+      - name: campaign_spend
+        description: Dépense marketing par campagne, date et pays.

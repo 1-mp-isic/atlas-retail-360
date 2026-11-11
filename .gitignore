@@ -1,0 +1,38 @@
+# Secrets : jamais dans Git
+.env
+profiles.yml
+**/profiles.yml
+!dbt_project/profiles.yml.example
+*.pem
+*.key
+
+# Données générées : reproductibles depuis le générateur et la seed
+data/
+*.parquet
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+.user.yml
+
+# Power BI et exports
+*.pbix.bak
+exports/
+
+# Éditeurs et systèmes
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
